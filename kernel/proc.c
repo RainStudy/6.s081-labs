@@ -302,6 +302,13 @@ fork(void)
   // Cause fork to return 0 in the child.
   np->trapframe->a0 = 0;
 
+
+  // rain start
+  // copy trace mask from parent
+  np->trace_mask = p->trace_mask;
+  // rain end
+
+
   // increment reference counts on open file descriptors.
   for(i = 0; i < NOFILE; i++)
     if(p->ofile[i])
@@ -629,7 +636,7 @@ int
 either_copyout(int user_dst, uint64 dst, void *src, uint64 len)
 {
   struct proc *p = myproc();
-  if(user_dst){
+  if(user_dst) {
     return copyout(p->pagetable, dst, src, len);
   } else {
     memmove((char *)dst, src, len);
@@ -670,7 +677,7 @@ procdump(void)
   char *state;
 
   printf("\n");
-  for(p = proc; p < &proc[NPROC]; p++){
+  for(p = proc; p < &proc[NPROC]; p++) {
     if(p->state == UNUSED)
       continue;
     if(p->state >= 0 && p->state < NELEM(states) && states[p->state])
@@ -680,4 +687,15 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+int 
+proccnt(void) 
+{
+  int cnt = 0;
+  for (int i = 0; i < NPROC; i++) {
+    if (proc[i].state == UNUSED) continue;
+    cnt++;
+  }
+  return cnt;
 }

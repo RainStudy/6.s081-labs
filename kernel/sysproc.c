@@ -5,6 +5,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "sysinfo.h"
 
 uint64
 sys_exit(void)
@@ -90,4 +91,30 @@ sys_uptime(void)
   xticks = ticks;
   release(&tickslock);
   return xticks;
+}
+
+uint64
+sys_trace(void) {
+  int mask;
+
+  argint(0, &mask);
+  myproc()->trace_mask = mask;
+  return 0;
+}
+
+uint64
+sys_sysinfo(void) {
+  // 用户态传过来的指针不能在内核态直接使用
+  // 因为用户态的地址是每个进程独立的虚拟内存地址
+  // 而内核的内存地址是物理内存地址
+  uint64 addr;
+  struct sysinfo info;
+  argaddr(0, &addr);
+  struct proc *p = myproc();
+  info.freemem = freemem();
+  info.nproc = proccnt();
+  // 将内核态的info复制回用户态 也就是系统调用的调用者进程的虚拟内存空间
+  if (copyout(p->pagetable, addr, (char*)&info, sizeof(info)) < 0)
+    return -1;
+  return 0;
 }

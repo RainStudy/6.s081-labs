@@ -80,3 +80,18 @@ kalloc(void)
     memset((char*)r, 5, PGSIZE); // fill with junk
   return (void*)r;
 }
+
+int 
+freemem(void) 
+{
+  // 其实就是算 freelist 的长度，然后乘以页大小
+  // 这里得到的是物理内存的空余量，实际上还有每个进程还有虚拟内存页表
+  // 经典的一个链表的遍历
+  struct run *curr = kmem.freelist;
+  int cnt = 0;
+  while (curr) {
+    curr = curr->next;
+    cnt++;
+  }
+  return cnt * PGSIZE;
+}
