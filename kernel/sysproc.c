@@ -75,6 +75,38 @@ int
 sys_pgaccess(void)
 {
   // lab pgtbl: your code here.
+  uint64 addr;
+  int len;
+  uint64 mask_address;
+
+  argaddr(0, &addr);
+  argint(1, &len);
+  argaddr(2, &mask_address);
+
+  // set an upper limit to unsigned int mask
+  if (len > 32) {
+    return -1;
+  }
+
+  struct proc *p = myproc();
+  uint32 mask = 0;
+
+  for (int i = 0; i < len; i++) {
+    pte_t *pte;
+    pte = walk(p->pagetable, addr + PGSIZE * i, 0);
+    // 是否有 PTE_A 的标记
+    if (pte != 0 && ((*pte) & PTE_A)) {
+      // 写入mask
+      mask |= (1 << i);
+      // 清除标记
+      *pte &= ~PTE_A;
+    }
+  }
+
+  // 将结果写回用户态
+  if (copyout(p->pagetable, mask_address, (char*) &mask, sizeof(mask)) < 0) {
+    return -1;
+  }
   return 0;
 }
 #endif

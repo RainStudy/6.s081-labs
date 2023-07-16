@@ -1,0 +1,3 @@
+getpid, uptime
+page 0 是应用程序的代码段和数据段，page 1 是用于溢出检测的 guard code，page 2 是用户栈
+
