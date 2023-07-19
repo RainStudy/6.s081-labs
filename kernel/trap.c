@@ -77,8 +77,18 @@ usertrap(void)
     exit(-1);
 
   // give up the CPU if this is a timer interrupt.
-  if(which_dev == 2)
+  if(which_dev == 2) {
+    if (p->alarm_interval > 0 && p->alarm_ticks++ >= p->alarm_interval && p->alarm_goingoff == 0) {
+      p->alarm_ticks = 0;
+      // 保存所有寄存器
+      *p->alarm_trapframe = *p->trapframe;
+      // 直接修改pc到handler
+      p->trapframe->epc = p->alarm_handler;
+      // 设置为有 handler 正在运行
+      p->alarm_goingoff = 1;
+    }
     yield();
+  }
 
   usertrapret();
 }
@@ -219,3 +229,22 @@ devintr()
   }
 }
 
+uint64
+sys_sigalarm(void) 
+{
+  struct proc* p = myproc();
+  argint(0, &p->alarm_interval);
+  argaddr(1, &p->alarm_handler);
+
+  return 0;
+}
+
+uint64 
+sys_sigreturn(void) 
+{
+  struct proc* p = myproc();
+  *p->trapframe = *p->alarm_trapframe;
+  p->alarm_goingoff = 0;
+  
+  return 0;
+}
