@@ -288,8 +288,13 @@ fork(void)
     return -1;
   }
 
+  // 在这里实现 cow
+  // 不要全部 copy，而是将子进程的 pagetable 全部映射为父进程的 pagetable 的内容
+  // 并将其全部设置为 COW 映射 （利用PTE的保留位 R S W 标记即可）
+  // 然后将两个进程的 pagetable 的全部内容设置为 read only (只要把 PTR_W 去掉就好)
+  
   // Copy user memory from parent to child.
-  if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0){
+  if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0) {
     freeproc(np);
     release(&np->lock);
     return -1;

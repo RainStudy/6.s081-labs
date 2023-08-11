@@ -67,6 +67,13 @@ usertrap(void)
     syscall();
   } else if((which_dev = devintr()) != 0){
     // ok
+  } else if (r_scause() == 15 && uncopied_cow(p->pagetable, r_stval())) {
+    // 写产生的 page fault
+    // 从 stval 拿产生 page fault 的虚拟地址
+    uint64 va = r_stval();
+    if (cow_alloc(p->pagetable, va) != 0) {
+      setkilled(p);
+    }
   } else {
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
