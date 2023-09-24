@@ -1,0 +1,16 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     barrier
+relocations:
+  - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x0, symBinAddr: 0x100003AE0, symSize: 0x144 }
+  - { offsetInCU: 0x52, offset: 0x52, size: 0x8, addend: 0x0, symName: _bstate, symBinAddr: 0x100008008, symSize: 0x0 }
+  - { offsetInCU: 0x134, offset: 0x134, size: 0x8, addend: 0x0, symName: _nthread, symObjAddr: 0x404, symBinAddr: 0x100008000, symSize: 0x0 }
+  - { offsetInCU: 0x146, offset: 0x146, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x0, symBinAddr: 0x100003AE0, symSize: 0x144 }
+  - { offsetInCU: 0x4CF, offset: 0x4CF, size: 0x8, addend: 0x0, symName: _main.cold.2, symObjAddr: 0x25C, symBinAddr: 0x100003D3C, symSize: 0x28 }
+  - { offsetInCU: 0x4E6, offset: 0x4E6, size: 0x8, addend: 0x0, symName: _main.cold.1, symObjAddr: 0x234, symBinAddr: 0x100003D14, symSize: 0x28 }
+  - { offsetInCU: 0x4FD, offset: 0x4FD, size: 0x8, addend: 0x0, symName: _main.cold.4, symObjAddr: 0x2AC, symBinAddr: 0x100003D8C, symSize: 0x28 }
+  - { offsetInCU: 0x529, offset: 0x529, size: 0x8, addend: 0x0, symName: _main.cold.3, symObjAddr: 0x284, symBinAddr: 0x100003D64, symSize: 0x28 }
+  - { offsetInCU: 0x55D, offset: 0x55D, size: 0x8, addend: 0x0, symName: _thread, symObjAddr: 0x144, symBinAddr: 0x100003C24, symSize: 0xF0 }
+  - { offsetInCU: 0x645, offset: 0x645, size: 0x8, addend: 0x0, symName: _main.cold.1, symObjAddr: 0x234, symBinAddr: 0x100003D14, symSize: 0x28 }
+  - { offsetInCU: 0x6E2, offset: 0x6E2, size: 0x8, addend: 0x0, symName: _thread.cold.1, symObjAddr: 0x2D4, symBinAddr: 0x100003DB4, symSize: 0x28 }
+...

@@ -17,6 +17,7 @@ struct entry *table[NBUCKET];
 int keys[NKEYS];
 int nthread = 1;
 
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 double
 now()
@@ -51,8 +52,11 @@ void put(int key, int value)
     // update the existing key.
     e->value = value;
   } else {
+    // 给插入操作上锁
+    pthread_mutex_lock(&lock);
     // the new is new.
     insert(key, value, &table[i], table[i]);
+    pthread_mutex_unlock(&lock);
   }
 
 }

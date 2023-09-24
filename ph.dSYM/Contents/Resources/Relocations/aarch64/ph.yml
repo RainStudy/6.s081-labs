@@ -1,0 +1,19 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     ph
+relocations:
+  - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _now, symObjAddr: 0x0, symBinAddr: 0x100003818, symSize: 0x4C }
+  - { offsetInCU: 0x3F, offset: 0x3F, size: 0x8, addend: 0x0, symName: _nthread, symObjAddr: 0x5B0, symBinAddr: 0x100008000, symSize: 0x0 }
+  - { offsetInCU: 0x5B, offset: 0x5B, size: 0x8, addend: 0x0, symName: _lock, symObjAddr: 0x5B8, symBinAddr: 0x100008008, symSize: 0x0 }
+  - { offsetInCU: 0xCD, offset: 0xCD, size: 0x8, addend: 0x0, symName: _table, symBinAddr: 0x100069AC8, symSize: 0x0 }
+  - { offsetInCU: 0x120, offset: 0x120, size: 0x8, addend: 0x0, symName: _keys, symBinAddr: 0x100008048, symSize: 0x0 }
+  - { offsetInCU: 0x139, offset: 0x139, size: 0x8, addend: 0x0, symName: _now, symObjAddr: 0x0, symBinAddr: 0x100003818, symSize: 0x4C }
+  - { offsetInCU: 0x1F4, offset: 0x1F4, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x4C, symBinAddr: 0x100003864, symSize: 0x2DC }
+  - { offsetInCU: 0x5EF, offset: 0x5EF, size: 0x8, addend: 0x0, symName: _main.cold.4, symObjAddr: 0x560, symBinAddr: 0x100003D78, symSize: 0x28 }
+  - { offsetInCU: 0x606, offset: 0x606, size: 0x8, addend: 0x0, symName: _main.cold.2, symObjAddr: 0x510, symBinAddr: 0x100003D28, symSize: 0x28 }
+  - { offsetInCU: 0x61D, offset: 0x61D, size: 0x8, addend: 0x0, symName: _main.cold.3, symObjAddr: 0x538, symBinAddr: 0x100003D50, symSize: 0x28 }
+  - { offsetInCU: 0x634, offset: 0x634, size: 0x8, addend: 0x0, symName: _main.cold.1, symObjAddr: 0x4E8, symBinAddr: 0x100003D00, symSize: 0x28 }
+  - { offsetInCU: 0x64B, offset: 0x64B, size: 0x8, addend: 0x0, symName: _main.cold.5, symObjAddr: 0x588, symBinAddr: 0x100003DA0, symSize: 0x28 }
+  - { offsetInCU: 0x6DC, offset: 0x6DC, size: 0x8, addend: 0x0, symName: _put_thread, symObjAddr: 0x328, symBinAddr: 0x100003B40, symSize: 0x110 }
+  - { offsetInCU: 0x823, offset: 0x823, size: 0x8, addend: 0x0, symName: _get_thread, symObjAddr: 0x438, symBinAddr: 0x100003C50, symSize: 0xB0 }
+...
