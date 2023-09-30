@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "xv6debug",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/kernel/kernel",
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "miDebuggerServerAddress": "127.0.0.1:25501", //见.gdbinit 中 target remote xxxx:xx
+            "miDebuggerPath": "/opt/homebrew/bin/riscv64-unknown-elf-gdb", // which gdb-multiarch
+            "MIMode": "gdb"
+        }
+    ]
+}

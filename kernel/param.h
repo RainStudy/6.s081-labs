@@ -11,3 +11,5 @@
 #define NBUF         (MAXOPBLOCKS*3)  // size of disk block cache
 #define FSSIZE       2000  // size of file system in blocks
 #define MAXPATH      128   // maximum file path name
+
+#define NBUFMAP_BUCKET 13  // bio buf map 使用素数数量的桶可以减少哈希冲突

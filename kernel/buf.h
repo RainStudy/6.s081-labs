@@ -8,5 +8,8 @@ struct buf {
   struct buf *prev; // LRU cache list
   struct buf *next;
   uchar data[BSIZE];
+
+  // 维护一个最后访问时间来实现 LRU
+  uint ticks;
 };
 
