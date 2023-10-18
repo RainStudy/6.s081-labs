@@ -396,6 +396,7 @@ bmap(struct inode *ip, uint bn)
   }
   bn -= NDIRECT;
 
+  // bn < NINDIRECT 的情况下使用 single indirect block
   if(bn < NINDIRECT){
     // Load indirect block, allocating if necessary.
     if((addr = ip->addrs[NDIRECT]) == 0){
@@ -410,6 +411,44 @@ bmap(struct inode *ip, uint bn)
       addr = balloc(ip->dev);
       if(addr){
         a[bn] = addr;
+        log_write(bp);
+      }
+    }
+    brelse(bp);
+    return addr;
+  }
+
+  bn -= NINDIRECT;
+  // 在这个范围中使用 double indirect node
+  if (bn < NDOUBLYINDIRECT) {
+    // 初始化 double indirect node
+    if ((addr = ip->addrs[NDIRECT + 1]) == 0) {
+      addr = balloc(ip->dev);
+      if (addr == 0)
+        return 0;
+      ip->addrs[NDIRECT + 1] = addr;
+    }
+    // 先读出 double indirect node
+    bp = bread(ip->dev, addr);
+    a = (uint*) bp->data;
+    // 一层 二层的index
+    int index1 = bn / NINDIRECT;
+    int index2 = bn % NINDIRECT;
+    if ((addr = a[index1]) == 0) {
+      addr = balloc(ip->dev);
+      if (addr) {
+        a[index1] = addr;
+        log_write(bp);
+      }
+    }
+    brelse(bp);
+    // 读出一层 indirect node
+    bp = bread(ip->dev, addr);
+    a = (uint*) bp->data;
+    if ((addr = a[index2]) == 0) {
+      addr = balloc(ip->dev);
+      if (addr) {
+        a[index2] = addr;
         log_write(bp);
       }
     }
@@ -446,6 +485,26 @@ itrunc(struct inode *ip)
     brelse(bp);
     bfree(ip->dev, ip->addrs[NDIRECT]);
     ip->addrs[NDIRECT] = 0;
+  }
+
+  if (ip->addrs[NDIRECT + 1]) {
+    bp = bread(ip->dev, ip->addrs[NDIRECT + 1]);
+    a = (uint*)bp->data;
+    for (j = 0; j < NINDIRECT; j++) {
+      if (a[j]) {
+        struct buf *bp1 = bread(ip->dev, a[j]);
+        uint *a1 = (uint*) bp1->data;
+        for (int k = 0; k < NINDIRECT; k++) {
+          if (a1[k]) 
+            bfree(ip->dev, a1[k]);
+        }
+        brelse(bp1);
+        bfree(ip->dev, a[j]);
+      }
+    }
+    brelse(bp);
+    bfree(ip->dev, ip->addrs[NDIRECT]);
+    ip->addrs[NDIRECT + 1] = 0;
   }
 
   ip->size = 0;
