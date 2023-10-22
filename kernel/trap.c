@@ -5,6 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "fcntl.h"
 
 struct spinlock tickslock;
 uint ticks;
@@ -68,9 +69,21 @@ usertrap(void)
   } else if((which_dev = devintr()) != 0){
     // ok
   } else {
-    printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
-    printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
-    setkilled(p);
+    switch (r_scause()) {
+      case 13:
+      case 15: {
+        // 处理 page fault
+        uint64 addr = r_stval();
+        if (handle_pgfault(addr)) {
+          break;
+        }
+      }
+      default: {
+        printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
+        printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
+        setkilled(p);
+      }
+    }
   }
 
   if(killed(p))

@@ -15,6 +15,7 @@
 #include "sleeplock.h"
 #include "file.h"
 #include "fcntl.h"
+#include "memlayout.h"
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
@@ -502,4 +503,183 @@ sys_pipe(void)
     return -1;
   }
   return 0;
+}
+
+// void *mmap(void *addr, size_t length, int prot, int flags,
+//      int fd, off_t offset);
+uint64
+sys_mmap(void) 
+{
+  uint64 addr;
+  int sz, prot, flags, fd, offset;
+  struct file *f;
+  argaddr(0, &addr);
+  argint(1, &sz);
+  argint(2, &prot);
+  argint(3, &flags);
+  argfd(4, &fd, &f);
+  argint(5, &offset);
+
+  struct proc *p = myproc();
+  struct vma *selected_vma = 0;
+  uint64 vaend = MMAPEND;
+
+  if (fd > NOFILE || fd < 0) {
+    // panic("mmap: ilegal fd");
+    return -1;
+  }
+
+  if (f == 0) {
+    // panic("mmap: file not found");
+    return -1;
+  }
+
+  if((!f->readable && (prot & (PROT_READ)))
+     || (!f->writable && (prot & PROT_WRITE) && !(flags & MAP_PRIVATE)))
+    return -1;
+
+  for (int i = 0; i < 16; i++) {
+    struct vma *vma = &p->vmas[i];
+    if (!vma->valid) {
+      if (selected_vma == 0) {
+        selected_vma = vma;
+        vma->valid = 1;
+      }
+    } else if (vma->addr < vaend) {
+      vaend = PGROUNDDOWN(vma->addr);
+    }
+  }
+
+  if (selected_vma == 0) {
+    // panic("mmap: no free vma");
+    return -1;
+  }
+
+  selected_vma->addr = vaend - sz;
+  selected_vma->size = sz;
+  selected_vma->flags = flags;
+  selected_vma->prot = prot;
+  selected_vma->offset = offset;
+  selected_vma->file = f;
+
+  // 增加文件引用计数
+  filedup(f);
+
+  return selected_vma->addr;
+}
+
+// int munmap(void *addr, size_t length)
+uint64
+sys_munmap(void)
+{
+  uint64 addr;
+  int len;
+  argaddr(0, &addr);
+  argint(1, &len);
+
+  struct proc *p = myproc();
+  struct vma *vma = findvma(p, addr);
+  if(vma == 0) {
+    return -1;
+  }
+  // 减掉对应长度
+  uint64 addr_aligned = addr;
+  if(addr > vma->addr) {
+    addr_aligned = PGROUNDUP(addr);
+  }
+  int nunmap = len - (addr_aligned - addr);
+  if (nunmap < 0) {
+    nunmap = 0;
+  }
+
+  vmaunmap(p->pagetable, addr_aligned, nunmap, vma);
+
+  if(addr <= vma->addr && addr + len > vma->addr) { // unmap at the beginning
+    vma->offset += addr + len - vma->addr;
+    vma->addr = addr + len;
+  }
+  vma->size -= len;
+
+  if (vma->size <= 0) {
+    vma->valid = 0;
+    fileclose(vma->file);
+  }
+
+  return 0;
+}
+
+void vmaunmap(pagetable_t pagetable, uint64 va, uint64 nbytes, struct vma *v) {
+  uint64 a;
+  pte_t *pte;
+
+  for(a = va; a < va + nbytes; a += PGSIZE){
+    if((pte = walk(pagetable, a, 0)) == 0)
+      continue;
+    if(PTE_FLAGS(*pte) == PTE_V)
+      panic("sys_munmap: not a leaf");
+    if(*pte & PTE_V){
+      uint64 pa = PTE2PA(*pte);
+      if((*pte & PTE_D) && (v->flags & MAP_SHARED)) { // dirty, need to write back to disk
+        begin_op();
+        ilock(v->file->ip);
+        uint64 aoff = a - v->addr; // offset relative to the start of memory range
+        if(aoff < 0) { // if the first page is not a full 4k page
+          writei(v->file->ip, 0, pa + (-aoff), v->offset, PGSIZE + aoff);
+        } else if(aoff + PGSIZE > v->size){  // if the last page is not a full 4k page
+          writei(v->file->ip, 0, pa, v->offset + aoff, v->size - aoff);
+        } else { // full 4k pages
+          writei(v->file->ip, 0, pa, v->offset + aoff, PGSIZE);
+        }
+        iunlock(v->file->ip);
+        end_op();
+      }
+      kfree((void*)pa);
+      *pte = 0;
+    }
+  }
+}
+
+struct vma *findvma(struct proc *p, uint64 va) {
+  // 查找对应的 vma
+  struct vma *vma = 0;
+  for (int i = 0; i < 16; i++) {
+    struct vma *v = &p->vmas[i];
+    if (v->valid && va >= v->addr && va <= v->addr + v->size) {
+      vma = v;
+      break;
+    }
+  }
+  return vma;
+}
+
+int handle_pgfault(uint64 va) {
+  struct proc *p = myproc();
+  struct vma *vma = findvma(p, va);
+  if (vma == 0) return 0;
+  void *pa = kalloc();
+  if (pa == 0) {
+    panic("handle_pgfault: kalloc");
+  }
+  memset(pa, 0, PGSIZE);
+  // 把文件读进 pa
+  begin_op();
+  ilock(vma->file->ip);
+  readi(vma->file->ip, 0, (uint64)pa, vma->offset + PGROUNDDOWN(va - vma->addr), PGSIZE);
+  iunlock(vma->file->ip);
+  end_op();
+
+  // set appropriate perms, then map it.
+  int perm = PTE_U;
+  if (vma->prot & PROT_READ)
+    perm |= PTE_R;
+  if (vma->prot & PROT_WRITE)
+    perm |= PTE_W;
+  if (vma->prot & PROT_EXEC)
+    perm |= PTE_X;
+  
+  if (mappages(p->pagetable, va, PGSIZE, (uint64) pa, PTE_R | PTE_W | PTE_U) < 0) {
+    panic("handle_pgfault: mappages");
+  }
+
+  return 1;
 }
